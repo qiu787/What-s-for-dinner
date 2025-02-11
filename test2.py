@@ -1,12 +1,9 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import json
 import random
 
-headers = {
-        "authorization":st.secrets["dinner_key"]
-}
-
+client = OpenAI(api_key=st.secrets["dinner_key"])
 
 if "page" not in st.session_state:
     st.session_state.page = "home"  
@@ -89,7 +86,7 @@ Do not output any extra text.
 """
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(  
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a professional western food chef who needs to return a list of recipes in JSON format based on the user's preferences and ingredients."},
@@ -97,8 +94,8 @@ Do not output any extra text.
             ],
             max_tokens=800,
             temperature=0.7
-        )
-        return response.choices[0].message["content"]
+    )
+        return response.choices[0].message.content  
     except Exception as e:
         return f"ERROR: {str(e)}"
 
@@ -115,16 +112,16 @@ Please list the detailed steps and techniques to make this dish.
 """
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a professional western food chef who needs to give detailed recipe instructions based on user preferences and ingredients。"},
+                {"role": "system", "content": "You are a professional western food chef who needs to give detailed recipe instructions based on user preferences and ingredients."},  # 修正中文句号为英文句号
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
             temperature=0.7
         )
-        return response.choices[0].message["content"]
+        return response.choices[0].message.content 
     except Exception as e:
         return f"ERROR: {str(e)}"
 
