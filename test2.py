@@ -3,7 +3,6 @@ from openai import OpenAI
 import json
 import random
 
-# ============== 自定义样式 ==============
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -40,7 +39,6 @@ div.stButton > button:hover {
 
 client = OpenAI(api_key=st.secrets["dinner_key"])
 
-# ============== 状态初始化 ==============
 if "page" not in st.session_state:
     st.session_state.page = "home"  
 if "food_inventory" not in st.session_state:
@@ -53,9 +51,10 @@ if "preferences" not in st.session_state or not isinstance(st.session_state.pref
     }
    
 if "recipes_list" not in st.session_state:
-    st.session_state.recipes_list = []   
+    st.session_state.recipes_list = []
 
-# ============== 页面头部 ==============
+
+
 top_col1, top_col2, top_col3 = st.columns([4, 12, 3])
 
 with top_col1:
@@ -68,7 +67,6 @@ with top_col3:
     if st.button("⚙️ Preferences", key="edit_pref"):
         st.session_state.page = "preferences"
 
-# ============== 导航栏 ==============
 col1, col2 = st.columns([6, 1])  
 with col1:
     if st.button("🧊 Fridge", key="to_warehouse"):
@@ -77,7 +75,6 @@ with col2:
     if st.button("📜 Recipes", key="to_recipes"):
         st.session_state.page = "recipes"
 
-# ============== 功能函数 ==============
 def parse_recipes_from_json(json_str):
     recipes = []
     try:
@@ -109,19 +106,21 @@ Return in JSON format:
 """
 
     try:
+        # Remove the 'response_format' parameter
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "Professional chef returning recipes in JSON"},
                 {"role": "user", "content": prompt}
             ],
-            response_format="json",
             max_tokens=800,
             temperature=0.8 if random_mode else 0.6
         )
+        # Return the content of the response
         return response.choices[0].message.content
     except Exception as e:
         return f"ERROR: {str(e)}"
+
 
 def generate_recipe_instructions(recipe_name, ingredients, preferences):
     prompt = f"""
@@ -149,7 +148,6 @@ Include:
     except Exception as e:
         return f"ERROR: {str(e)}"
 
-# ============== 页面函数 ==============
 def show_warehouse_page():
     st.subheader("🧊 My Fridge")
     
@@ -187,7 +185,7 @@ def show_warehouse_page():
                 st.rerun()
 
 def show_preferences_page():
-    st.subheader("⚙️ Taste Preferences")  # 必须缩进4个空格
+    st.subheader("⚙️ Taste Preferences") 
     
     st.markdown("**Quick Select:**")
     col1, col2, col3 = st.columns(3)
@@ -204,14 +202,13 @@ def show_preferences_page():
     st.markdown("---")
     st.markdown("**Cooking Settings:**")
     
-    # 工具选择
     tools = st.multiselect(
         "Available Tools:",
         ["Stovetop", "Oven", "Microwave", "Air Fryer", "Blender"],
         default=st.session_state.preferences['tools']
     )
     
-    # 烹饪时间选择
+  
     cook_time = st.selectbox(
         "Cooking Time:",
         ["Any", "15 mins", "30 mins", "1 hour", "1.5 hours+"],
@@ -220,7 +217,6 @@ def show_preferences_page():
         )
     )
 
-    # 文本输入
     pref = st.text_area(
         "Additional Preferences:",
         value=st.session_state.preferences['text'],
@@ -239,9 +235,12 @@ def show_preferences_page():
         st.rerun()
 
 def show_recipes_page():
+    if "recipes_list" not in st.session_state:
+        st.session_state.recipes_list = []
+
     st.subheader("📜 Recipe Generation")
     
-    # 显示当前偏好
+
     pref_info = f"""
     🧂 Taste: {st.session_state.preferences['text'] or 'None'}
     ⚒️ Tools: {', '.join(st.session_state.preferences['tools']) or 'Any'}
@@ -256,7 +255,6 @@ def show_recipes_page():
             if st.checkbox(f"{food}", key=f"select_{food}"):
                 selected_ingredients.append(food)
     
-    # 双按钮布局
     col_gen, col_random = st.columns(2)
     with col_gen:
         gen_clicked = st.button("✨ Generate Recipes", type="primary")
@@ -273,8 +271,12 @@ def show_recipes_page():
                     st.session_state.preferences,
                     random_mode=random_clicked
                 )
+                
+
                 if not raw_json.startswith("ERROR"):
+                    
                     new_recipes = parse_recipes_from_json(raw_json)
+
                     if new_recipes:
                         st.session_state.recipes_list = new_recipes
                     else:
@@ -283,7 +285,6 @@ def show_recipes_page():
     st.write("### 🍽️ Generated Recipes")
     if st.session_state.recipes_list:
         for idx, r in enumerate(st.session_state.recipes_list):
-            # 卡片式布局
             with st.container():
                 st.markdown(f"""
                 <div class="recipe-card">
@@ -292,7 +293,7 @@ def show_recipes_page():
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # 展开详情
+               
                 with st.expander("📖 Show Instructions", expanded=False):
                     instructions = generate_recipe_instructions(
                         r['name'], 
@@ -307,7 +308,10 @@ def show_recipes_page():
     else:
         st.write("No recipes generated yet")
 
-# ============== 页面路由 ==============
+
+
+
+   
 if st.session_state.page == "home":
     st.write("Welcome! Use the navigation buttons to get started.")
 elif st.session_state.page == "warehouse":
